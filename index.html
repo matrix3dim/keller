@@ -373,8 +373,7 @@ async function ghSave(){
   try {
     const body={message:`Update inventory ${ts()}`,content:b64e(JSON.stringify(inv,null,2))};
     if(sha) body.sha=sha;
-    const r=await fetch(API_URL(),{method:"PUT",headers:{"Authorization":`Bearer ${GH_TOKEN()}`,}
-      "Accept":"application/vnd.github.v3+json","Content-Type":"application/json"},body:JSON.stringify(body)});
+    const r=await fetch(API_URL(),{method:"PUT",headers:{"Authorization":`Bearer ${GH_TOKEN()}`,"Accept":"application/vnd.github.v3+json","Content-Type":"application/json"},body:JSON.stringify(body)});
     if(!r.ok){ const e=await r.json(); throw new Error(e.message||r.status); }
     const d=await r.json(); sha=d.content.sha;
     localStorage.setItem(LS_KEY,JSON.stringify({sha,data:inv}));
