@@ -1,0 +1,14 @@
+{
+  "shampoo": {
+    "quantity": 3,
+    "last_updated": "2026-02-01 15:39"
+  },
+  "toilet paper": {
+    "quantity": 5,
+    "last_updated": "2026-02-01 15:39"
+  },
+  "bot giat": {
+    "quantity": 0,
+    "last_updated": "2026-02-01 15:40"
+  }
+}

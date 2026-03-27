@@ -1,0 +1,631 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Keller">
+  <meta name="theme-color" content="#2c3e50">
+  <title>Keller Inventory</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand: #2c3e50; --brand-dark: #1a252f; --brand-light: #34495e;
+      --accent: #27ae60; --accent-h: #219a52;
+      --action: #2980b9;
+      --bg: #f0f2f5; --surface: #fff; --surface2: #f8f9fa;
+      --t1: #1a252f; --t2: #5d6d7e; --td: #aab7b8; --tw: #fff;
+      --err: #c0392b; --err-bg: #fdedec;
+      --low-bg: #fdedec; --low-b: #c0392b; --low-badge: #c0392b;
+      --good-bg: #eafaf1; --good-b: #1e8449; --good-badge: #1e8449;
+      --norm-badge: #2980b9;
+      --border: #dde1e7;
+      --sh-sm: 0 1px 3px rgba(0,0,0,.08); --sh-md: 0 4px 12px rgba(0,0,0,.1);
+      --sh-lg: 0 8px 24px rgba(0,0,0,.12); --sh-fab: 0 4px 16px rgba(39,174,96,.35);
+      --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --r-f: 9999px;
+      --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--font); background:var(--bg); color:var(--t1);
+      overflow-x:hidden; -webkit-font-smoothing:antialiased;
+      -webkit-tap-highlight-color:transparent; }
+
+    /* ── PASSWORD SCREEN ── */
+    #pw-screen { position:fixed; inset:0; z-index:1000; display:flex;
+      align-items:center; justify-content:center; padding:20px;
+      background:linear-gradient(135deg,var(--brand) 0%,var(--brand-light) 50%,#2980b9 100%); }
+    .pw-card { background:rgba(255,255,255,.15); backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.25);
+      border-radius:var(--r-xl); padding:40px 32px; width:100%; max-width:380px;
+      text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+    .pw-icon { font-size:48px; margin-bottom:16px; }
+    .pw-card h1 { font-size:24px; font-weight:700; color:#fff; margin-bottom:8px; }
+    .pw-card p { font-size:14px; color:rgba(255,255,255,.75); margin-bottom:28px; }
+    .pw-wrap { position:relative; margin-bottom:10px; }
+    #pw-input { width:100%; padding:14px 48px 14px 16px; border:2px solid rgba(255,255,255,.3);
+      border-radius:var(--r-md); background:rgba(255,255,255,.15); color:#fff;
+      font-size:16px; font-family:var(--font); outline:none; transition:border-color .2s; }
+    #pw-input::placeholder { color:rgba(255,255,255,.5); }
+    #pw-input:focus { border-color:rgba(255,255,255,.7); }
+    #pw-toggle { position:absolute; right:14px; top:50%; transform:translateY(-50%);
+      background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer;
+      font-size:18px; padding:4px; }
+    #pw-err { color:#ff6b6b; font-size:13px; margin-bottom:10px; min-height:18px; }
+    #pw-btn { width:100%; padding:14px; background:#fff; color:var(--brand);
+      border:none; border-radius:var(--r-md); font-size:16px; font-weight:600;
+      font-family:var(--font); cursor:pointer; transition:opacity .2s,transform .1s; }
+    #pw-btn:active { transform:scale(.98); opacity:.9; }
+    @keyframes shake {
+      0%,100%{transform:translateX(0)} 10%,50%,90%{transform:translateX(-8px)} 30%,70%{transform:translateX(8px)} }
+    .pw-card.shake { animation:shake .5s ease; }
+
+    /* ── APP ── */
+    #app { min-height:100vh; padding-bottom:calc(80px + env(safe-area-inset-bottom)); }
+    header { background:linear-gradient(135deg,var(--brand) 0%,var(--brand-light) 100%);
+      color:#fff; padding:max(20px,env(safe-area-inset-top)) 20px 14px;
+      position:sticky; top:0; z-index:100; box-shadow:var(--sh-md); }
+    .hd-top { display:flex; align-items:center; justify-content:space-between; }
+    header h1 { font-size:22px; font-weight:700; }
+    #sync-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px;
+      font-weight:500; padding:4px 10px; border-radius:var(--r-f);
+      background:rgba(255,255,255,.15); color:rgba(255,255,255,.9); margin-top:6px; }
+    .sdot { width:7px; height:7px; border-radius:50%; background:#95a5a6; }
+    .sdot.syncing { background:#3498db; animation:blink 1s infinite; }
+    .sdot.saved   { background:var(--accent); }
+    .sdot.error   { background:var(--err); }
+    .sdot.offline { background:#95a5a6; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── SEARCH ── */
+    .search-wrap { padding:12px 16px; background:#fff; border-bottom:1px solid var(--border); }
+    .search-inner { display:flex; align-items:center; background:var(--bg);
+      border-radius:var(--r-f); padding:9px 14px; gap:8px; }
+    .search-inner span { color:var(--td); font-size:16px; }
+    #search { flex:1; border:none; background:transparent; font-size:15px;
+      font-family:var(--font); color:var(--t1); outline:none; }
+    #search::placeholder { color:var(--td); }
+    #search-clr { background:none; border:none; cursor:pointer; color:var(--td);
+      font-size:16px; padding:2px; display:none; }
+
+    /* ── STATS ── */
+    .stats { display:flex; background:#fff; border-bottom:1px solid var(--border); padding:12px 0; }
+    .stat { flex:1; text-align:center; border-right:1px solid var(--border); }
+    .stat:last-child { border-right:none; }
+    .sv { font-size:22px; font-weight:700; color:var(--t1); }
+    .sv.warn { color:var(--err); }
+    .sl { font-size:10px; font-weight:600; text-transform:uppercase;
+      letter-spacing:.5px; color:var(--t2); margin-top:2px; }
+
+    /* ── LIST ── */
+    #inv-list { padding:12px 16px; max-width:600px; margin:0 auto; }
+    .inv-card { background:var(--surface); border-radius:var(--r-md); padding:14px 16px;
+      margin-bottom:10px; box-shadow:var(--sh-sm); display:flex; align-items:center;
+      justify-content:space-between; cursor:pointer; border-left:4px solid var(--border);
+      transition:transform .15s,box-shadow .15s; -webkit-user-select:none; user-select:none; }
+    .inv-card:active { transform:scale(.98); }
+    .inv-card.low  { background:var(--low-bg);  border-left-color:var(--low-b); }
+    .inv-card.good { background:var(--good-bg); border-left-color:var(--good-b); }
+    .ci { flex:1; min-width:0; }
+    .cn { font-size:16px; font-weight:600; color:var(--t1); margin-bottom:3px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cu { font-size:11px; color:var(--td); }
+    .qbadge { background:var(--norm-badge); color:#fff; padding:6px 14px;
+      border-radius:var(--r-f); font-size:16px; font-weight:700; min-width:50px;
+      text-align:center; margin-left:12px; flex-shrink:0; }
+    .qbadge.low  { background:var(--low-badge); }
+    .qbadge.good { background:var(--good-badge); }
+
+    /* ── EMPTY ── */
+    .empty { text-align:center; padding:60px 20px 20px; color:var(--td); }
+    .empty .ei { font-size:48px; margin-bottom:12px; }
+    .empty p { font-size:15px; font-weight:500; }
+    .empty small { font-size:13px; }
+
+    /* ── FAB ── */
+    #fab { position:fixed; bottom:calc(24px + env(safe-area-inset-bottom)); right:20px; z-index:200; }
+    .fab-btn { width:56px; height:56px; border-radius:var(--r-f); background:var(--accent);
+      border:none; color:#fff; font-size:26px; cursor:pointer; box-shadow:var(--sh-fab);
+      display:flex; align-items:center; justify-content:center; transition:transform .2s,background .2s; }
+    .fab-btn:active { transform:scale(.92); }
+    .fab-btn.open { transform:rotate(45deg); background:var(--brand); }
+    .fab-opts { position:absolute; bottom:66px; right:0; display:flex; flex-direction:column;
+      align-items:flex-end; gap:10px; opacity:0; pointer-events:none;
+      transform:translateY(10px); transition:opacity .2s,transform .2s; }
+    .fab-opts.open { opacity:1; pointer-events:all; transform:translateY(0); }
+    .fab-row { display:flex; align-items:center; gap:10px; }
+    .fab-lbl { background:var(--brand); color:#fff; padding:6px 14px; border-radius:var(--r-f);
+      font-size:13px; font-weight:600; box-shadow:var(--sh-md); white-space:nowrap; }
+    .fab-ico { width:44px; height:44px; border-radius:var(--r-f); background:var(--brand);
+      border:none; color:#fff; font-size:20px; cursor:pointer; box-shadow:var(--sh-md);
+      display:flex; align-items:center; justify-content:center; }
+
+    /* ── SHEET ── */
+    #overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300;
+      opacity:0; pointer-events:none; transition:opacity .3s; backdrop-filter:blur(2px); }
+    #overlay.open { opacity:1; pointer-events:all; }
+    #sheet { position:fixed; bottom:0; left:0; right:0; background:var(--surface);
+      border-radius:20px 20px 0 0; z-index:400;
+      padding:0 20px calc(24px + env(safe-area-inset-bottom));
+      transform:translateY(100%); transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+      max-height:90vh; overflow-y:auto; }
+    #sheet.open { transform:translateY(0); }
+    .sh-handle { width:40px; height:4px; background:var(--border); border-radius:var(--r-f);
+      margin:12px auto 20px; }
+    .sh-title { font-size:18px; font-weight:700; margin-bottom:20px; color:var(--t1); }
+    .fg { margin-bottom:16px; }
+    .fl { display:block; font-size:13px; font-weight:600; color:var(--t2);
+      margin-bottom:6px; text-transform:uppercase; letter-spacing:.4px; }
+    .fi { width:100%; padding:13px 14px; border:2px solid var(--border);
+      border-radius:var(--r-md); font-size:16px; font-family:var(--font);
+      color:var(--t1); background:var(--surface); outline:none; transition:border-color .2s; }
+    .fi:focus { border-color:var(--action); }
+    .btn-p { width:100%; padding:14px; background:var(--accent); color:#fff; border:none;
+      border-radius:var(--r-md); font-size:16px; font-weight:600; font-family:var(--font);
+      cursor:pointer; transition:opacity .2s; margin-top:8px; }
+    .btn-p:active { opacity:.85; }
+    .btn-s { width:100%; padding:13px; background:transparent; color:var(--t2);
+      border:2px solid var(--border); border-radius:var(--r-md); font-size:15px;
+      font-weight:500; font-family:var(--font); cursor:pointer; margin-top:8px; }
+    .btn-d { width:100%; padding:13px; background:transparent; color:var(--err);
+      border:2px solid var(--err); border-radius:var(--r-md); font-size:15px;
+      font-weight:600; font-family:var(--font); cursor:pointer; margin-top:8px; }
+
+    /* ── SCANNER ── */
+    #scanner { position:fixed; inset:0; background:#000; z-index:500;
+      display:none; flex-direction:column; }
+    #scanner.open { display:flex; }
+    .sc-hd { display:flex; align-items:center;
+      padding:max(20px,env(safe-area-inset-top)) 20px 14px;
+      background:rgba(0,0,0,.7); }
+    .sc-close { background:rgba(255,255,255,.15); border:none; color:#fff;
+      width:36px; height:36px; border-radius:var(--r-f); font-size:20px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; margin-right:12px; }
+    .sc-hd span { color:#fff; font-size:16px; font-weight:600; }
+    #sc-wrap { flex:1; position:relative; overflow:hidden; }
+    #sc-video { width:100%; height:100%; object-fit:cover; }
+    .sc-frame { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+    .sc-box { width:260px; height:160px; position:relative; }
+    .corner { position:absolute; width:28px; height:28px; border-color:#27ae60; border-style:solid; }
+    .tl{top:0;left:0;border-width:3px 0 0 3px} .tr{top:0;right:0;border-width:3px 3px 0 0}
+    .bl{bottom:0;left:0;border-width:0 0 3px 3px} .br{bottom:0;right:0;border-width:0 3px 3px 0}
+    .sc-line { position:absolute; left:3px; right:3px; height:2px;
+      background:linear-gradient(90deg,transparent,#27ae60,transparent);
+      animation:scan 2s linear infinite; }
+    @keyframes scan { 0%{top:3px} 100%{top:calc(100% - 5px)} }
+    .sc-hint { position:absolute; bottom:0; left:0; right:0;
+      padding:calc(16px + env(safe-area-inset-bottom)) 20px 20px;
+      background:rgba(0,0,0,.7); color:rgba(255,255,255,.8); text-align:center; font-size:14px; }
+
+    /* ── TOAST ── */
+    #toast { position:fixed; bottom:calc(90px + env(safe-area-inset-bottom)); left:50%;
+      transform:translateX(-50%) translateY(20px); background:var(--brand); color:#fff;
+      padding:10px 20px; border-radius:var(--r-f); font-size:14px; font-weight:500;
+      z-index:600; opacity:0; transition:opacity .3s,transform .3s;
+      white-space:nowrap; box-shadow:var(--sh-md); pointer-events:none; }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    #app { animation:fadeIn .4s ease; }
+  </style>
+</head>
+<body>
+
+<!-- Password -->
+<div id="pw-screen">
+  <div class="pw-card" id="pw-card">
+    <div class="pw-icon">🏠</div>
+    <h1>Keller Inventory</h1>
+    <p>Enter password to access your inventory</p>
+    <div class="pw-wrap">
+      <input type="password" id="pw-input" placeholder="Password" autocomplete="off">
+      <button class="pw-toggle" id="pw-toggle" type="button">👁</button>
+    </div>
+    <div id="pw-err"></div>
+    <button id="pw-btn">Unlock</button>
+  </div>
+</div>
+
+<!-- Token Setup (shown once, on first login) -->
+<div id="tok-screen" style="display:none;position:fixed;inset:0;z-index:999;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-light) 50%,#2980b9 100%);">
+  <div class="pw-card">
+    <div class="pw-icon">🔑</div>
+    <h1>GitHub Token</h1>
+    <p>Paste your GitHub token to enable sync. This is stored only on your device.</p>
+    <div class="pw-wrap">
+      <input type="password" id="tok-input" placeholder="github_pat_..." autocomplete="off" style="font-size:13px;">
+      <button id="tok-toggle" type="button" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:18px;">👁</button>
+    </div>
+    <div id="tok-err" style="color:#ff6b6b;font-size:13px;margin-bottom:10px;min-height:18px;"></div>
+    <button id="tok-btn" style="width:100%;padding:14px;background:#fff;color:var(--brand);border:none;border-radius:var(--r-md);font-size:16px;font-weight:600;font-family:var(--font);cursor:pointer;">Save &amp; Continue</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" style="display:none">
+  <header>
+    <div class="hd-top"><h1>🏠 Keller</h1></div>
+    <div id="sync-badge"><span class="sdot" id="sdot"></span><span id="stxt">Ready</span></div>
+  </header>
+  <div class="search-wrap">
+    <div class="search-inner">
+      <span>🔍</span>
+      <input type="text" id="search" placeholder="Search items…">
+      <button id="search-clr">✕</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="sv" id="s-types">0</div><div class="sl">Items</div></div>
+    <div class="stat"><div class="sv" id="s-total">0</div><div class="sl">Total Qty</div></div>
+    <div class="stat"><div class="sv warn" id="s-low">0</div><div class="sl">Low Stock</div></div>
+  </div>
+  <div id="inv-list"></div>
+</div>
+
+<!-- FAB -->
+<div id="fab" style="display:none">
+  <div class="fab-opts" id="fab-opts">
+    <div class="fab-row">
+      <span class="fab-lbl">Add manually</span>
+      <button class="fab-ico" id="fab-add">✏️</button>
+    </div>
+    <div class="fab-row">
+      <span class="fab-lbl">Scan barcode</span>
+      <button class="fab-ico" id="fab-scan">📷</button>
+    </div>
+  </div>
+  <button class="fab-btn" id="fab-btn">+</button>
+</div>
+
+<!-- Sheet overlay -->
+<div id="overlay"></div>
+
+<!-- Bottom sheet -->
+<div id="sheet">
+  <div class="sh-handle"></div>
+  <div class="sh-title" id="sh-title">Add Item</div>
+  <div id="sh-body"></div>
+</div>
+
+<!-- Scanner -->
+<div id="scanner">
+  <div class="sc-hd">
+    <button class="sc-close" id="sc-close">✕</button>
+    <span>Scan Barcode</span>
+  </div>
+  <div id="sc-wrap">
+    <video id="sc-video" autoplay playsinline></video>
+    <div class="sc-frame">
+      <div class="sc-box">
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="sc-line"></div>
+      </div>
+    </div>
+    <div class="sc-hint">Point camera at barcode or QR code</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script>
+// ===== CONFIG (stored in localStorage, never hardcoded) =====
+const GH_OWNER = "matrix3dim";
+const GH_REPO  = "keller";
+const GH_FILE  = "inventory.json";
+const APP_PWD  = "hoahoang";
+const LS_KEY   = "keller_inv";
+const SS_KEY   = "keller_auth";
+const TOK_KEY  = "keller_tok";
+
+function GH_TOKEN(){ return localStorage.getItem(TOK_KEY) || ""; }
+function API_URL(){ return `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`; }
+
+// ===== STATE =====
+let inv = {}, sha = null, saveTimer = null, editItem = null, fabOpen = false, zxReader = null;
+
+// ===== UTILS =====
+function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
+function b64d(s){ return decodeURIComponent(escape(atob(s))); }
+function ts(){ const n=new Date(),p=v=>String(v).padStart(2,"0");
+  return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())} ${p(n.getHours())}:${p(n.getMinutes())}`; }
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function toast(msg,ms=2500){
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),ms); }
+
+// ===== SYNC STATUS =====
+function sync(state,txt){
+  document.getElementById("sdot").className="sdot "+state;
+  document.getElementById("stxt").textContent=txt; }
+
+// ===== GITHUB =====
+async function ghLoad(){
+  sync("syncing","Loading…");
+  try {
+    if(!GH_TOKEN()){ sync("error","No token"); toast("⚠️ Set your GitHub token in Settings"); return {}; }
+    const r=await fetch(API_URL(),{headers:{"Authorization":`Bearer ${GH_TOKEN()}`,"Accept":"application/vnd.github.v3+json"}});
+    if(r.status===404){ sha=null; sync("saved","New inventory"); return {}; }
+    if(!r.ok) throw new Error(r.status);
+    const d=await r.json();
+    sha=d.sha;
+    const parsed=JSON.parse(b64d(d.content.replace(/[\n\r]/g,"")));
+    localStorage.setItem(LS_KEY,JSON.stringify({sha,data:parsed}));
+    sync("saved","Synced ✓"); return parsed;
+  } catch(e){
+    console.error("ghLoad",e);
+    const c=localStorage.getItem(LS_KEY);
+    if(c){ const p=JSON.parse(c); sha=p.sha||null; sync("offline","Offline – cached");
+      toast("⚠️ Offline — showing cached data"); return p.data||{}; }
+    sync("error","Load failed"); toast("❌ Could not load inventory"); return {};
+  }
+}
+
+async function ghSave(){
+  sync("syncing","Saving…");
+  try {
+    const body={message:`Update inventory ${ts()}`,content:b64e(JSON.stringify(inv,null,2))};
+    if(sha) body.sha=sha;
+    const r=await fetch(API_URL(),{method:"PUT",headers:{"Authorization":`Bearer ${GH_TOKEN()}`,}
+      "Accept":"application/vnd.github.v3+json","Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!r.ok){ const e=await r.json(); throw new Error(e.message||r.status); }
+    const d=await r.json(); sha=d.content.sha;
+    localStorage.setItem(LS_KEY,JSON.stringify({sha,data:inv}));
+    sync("saved","Saved ✓");
+  } catch(e){
+    console.error("ghSave",e);
+    localStorage.setItem(LS_KEY,JSON.stringify({sha,data:inv}));
+    sync("error","Sync failed"); toast("❌ Sync failed — saved locally");
+  }
+}
+
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(ghSave,600); }
+
+// ===== RENDER =====
+function stockCls(q){ return q<=2?"low":q>=10?"good":""; }
+function badgeCls(q){ return q<=2?"low":q>=10?"good":""; }
+
+function render(){
+  const q=document.getElementById("search").value.toLowerCase();
+  const items=Object.entries(inv)
+    .filter(([n])=>n.toLowerCase().includes(q))
+    .sort((a,b)=>{ if(a[1].quantity<=2&&b[1].quantity>2)return -1;
+      if(b[1].quantity<=2&&a[1].quantity>2)return 1; return a[0].localeCompare(b[0]); });
+  const all=Object.values(inv);
+  document.getElementById("s-types").textContent=all.length;
+  document.getElementById("s-total").textContent=all.reduce((s,i)=>s+i.quantity,0);
+  document.getElementById("s-low").textContent=all.filter(i=>i.quantity<=2).length;
+  const list=document.getElementById("inv-list");
+  if(!items.length){
+    list.innerHTML=q
+      ?`<div class="empty"><div class="ei">🔍</div><p>No results for "${esc(q)}"</p><small>Try a different search</small></div>`
+      :`<div class="empty"><div class="ei">📦</div><p>Your inventory is empty</p><small>Tap + to add your first item</small></div>`;
+    return;
+  }
+  list.innerHTML=items.map(([n,it])=>`
+    <div class="inv-card ${stockCls(it.quantity)}" data-name="${esc(n)}" onclick="openEdit(this.dataset.name)">
+      <div class="ci"><div class="cn">${esc(n)}</div><div class="cu">Updated ${it.last_updated}</div></div>
+      <span class="qbadge ${badgeCls(it.quantity)}">${it.quantity}</span>
+    </div>`).join("");
+}
+
+// ===== SHEET =====
+function openSheet(){ document.getElementById("overlay").classList.add("open"); document.getElementById("sheet").classList.add("open"); }
+function closeSheet(){ document.getElementById("overlay").classList.remove("open"); document.getElementById("sheet").classList.remove("open"); editItem=null; }
+
+function openAdd(){
+  closeFab(); editItem=null;
+  document.getElementById("sh-title").textContent="Add Item";
+  document.getElementById("sh-body").innerHTML=`
+    <div class="fg"><label class="fl">Item Name</label>
+      <input class="fi" id="fi-name" type="text" placeholder="e.g. Toilet paper" autocomplete="off"></div>
+    <div class="fg"><label class="fl">Quantity</label>
+      <input class="fi" id="fi-qty" type="number" value="1" min="0"></div>
+    <button class="btn-p" onclick="submitAdd()">Add to Inventory</button>
+    <button class="btn-s" onclick="closeSheet()">Cancel</button>`;
+  openSheet(); setTimeout(()=>document.getElementById("fi-name").focus(),350);
+}
+
+function submitAdd(){
+  const n=document.getElementById("fi-name").value.trim();
+  const q=parseInt(document.getElementById("fi-qty").value)||0;
+  if(!n){ toast("Please enter an item name"); return; }
+  if(inv[n]){ inv[n].quantity+=q; inv[n].last_updated=ts(); }
+  else inv[n]={quantity:q,last_updated:ts()};
+  closeSheet(); render(); scheduleSave(); toast(`✓ ${n} added`);
+}
+
+function openEdit(name){
+  editItem=name; const it=inv[name];
+  document.getElementById("sh-title").textContent="Edit Item";
+  document.getElementById("sh-body").innerHTML=`
+    <div class="fg"><label class="fl">Item Name</label>
+      <input class="fi" id="ei-name" type="text" value="${esc(name)}"></div>
+    <div class="fg"><label class="fl">Quantity</label>
+      <input class="fi" id="ei-qty" type="number" value="${it.quantity}" min="0"></div>
+    <button class="btn-p" onclick="submitEdit()">Save Changes</button>
+    <button class="btn-d" onclick="delItem()">Delete Item</button>
+    <button class="btn-s" onclick="closeSheet()">Cancel</button>`;
+  openSheet(); setTimeout(()=>document.getElementById("ei-qty").focus(),350);
+}
+
+function submitEdit(){
+  const nn=document.getElementById("ei-name").value.trim();
+  const nq=parseInt(document.getElementById("ei-qty").value)||0;
+  if(!nn){ toast("Name cannot be empty"); return; }
+  if(nn!==editItem) delete inv[editItem];
+  inv[nn]={quantity:nq,last_updated:ts()};
+  closeSheet(); render(); scheduleSave(); toast(`✓ ${nn} updated`);
+}
+
+function delItem(){
+  if(!confirm(`Delete "${editItem}"?`)) return;
+  delete inv[editItem]; closeSheet(); render(); scheduleSave(); toast("🗑 Item deleted");
+}
+
+// ===== FAB =====
+function toggleFab(){
+  fabOpen=!fabOpen;
+  document.getElementById("fab-btn").classList.toggle("open",fabOpen);
+  document.getElementById("fab-opts").classList.toggle("open",fabOpen);
+}
+function closeFab(){
+  fabOpen=false;
+  document.getElementById("fab-btn").classList.remove("open");
+  document.getElementById("fab-opts").classList.remove("open");
+}
+
+// ===== SCANNER =====
+async function openScanner(){
+  closeFab();
+  document.getElementById("scanner").classList.add("open");
+  try {
+    zxReader=new ZXing.BrowserMultiFormatReader();
+    const devices=await ZXing.BrowserCodeReader.listVideoInputDevices();
+    const back=devices.find(d=>/back|rear|environment/i.test(d.label))||devices[devices.length-1];
+    await zxReader.decodeFromVideoDevice(back?back.deviceId:undefined,"sc-video",async(res,err)=>{
+      if(res){ const code=res.getText(); await closeScanner(); await handleBarcode(code); }
+    });
+  } catch(e){ console.error("scanner",e); closeScanner(); toast("❌ Camera access failed"); }
+}
+
+async function closeScanner(){
+  if(zxReader){ zxReader.reset(); zxReader=null; }
+  document.getElementById("scanner").classList.remove("open");
+}
+
+async function handleBarcode(code){
+  toast("🔍 Looking up product…",3000);
+  let name="";
+  try {
+    const r=await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+    const d=await r.json();
+    if(d.status===1&&d.product) name=d.product.product_name_en||d.product.product_name||"";
+  } catch(e){ console.error("OFF lookup",e); }
+  editItem=null;
+  document.getElementById("sh-title").textContent="Scanned Item";
+  document.getElementById("sh-body").innerHTML=`
+    <div class="fg"><label class="fl">Product Name${name?" (found)":" — enter manually"}</label>
+      <input class="fi" id="sc-name" type="text" value="${esc(name)}" placeholder="Product name" autocomplete="off"></div>
+    <p style="font-size:12px;color:var(--td);margin-bottom:14px">Barcode: ${code}</p>
+    <div class="fg"><label class="fl">Quantity</label>
+      <input class="fi" id="sc-qty" type="number" value="1" min="1"></div>
+    <button class="btn-p" onclick="submitScan()">Add to Inventory</button>
+    <button class="btn-s" onclick="quickAdd()">Quick Add 1</button>
+    <button class="btn-s" onclick="closeSheet()">Cancel</button>`;
+  openSheet();
+  if(!name) setTimeout(()=>document.getElementById("sc-name").focus(),350);
+}
+
+function submitScan(){
+  const n=document.getElementById("sc-name").value.trim();
+  const q=parseInt(document.getElementById("sc-qty").value)||1;
+  if(!n){ toast("Please enter a product name"); return; }
+  addItem(n,q); closeSheet();
+}
+
+function quickAdd(){
+  const n=document.getElementById("sc-name").value.trim();
+  if(!n){ toast("Please enter a product name"); return; }
+  addItem(n,1); closeSheet();
+}
+
+function addItem(name,qty){
+  if(inv[name]){ inv[name].quantity+=qty; inv[name].last_updated=ts(); }
+  else inv[name]={quantity:qty,last_updated:ts()};
+  render(); scheduleSave(); toast(`✓ ${name} (${qty}) added`);
+}
+
+// ===== AUTH =====
+function tryLogin(){
+  const v=document.getElementById("pw-input").value;
+  if(v===APP_PWD){
+    sessionStorage.setItem(SS_KEY,"1");
+    const s=document.getElementById("pw-screen");
+    s.style.transition="opacity .4s"; s.style.opacity="0";
+    setTimeout(()=>{
+      s.style.display="none";
+      // If no token stored yet, show token setup
+      if(!GH_TOKEN()){
+        document.getElementById("tok-screen").style.display="flex";
+      } else {
+        document.getElementById("app").style.display="block";
+        document.getElementById("fab").style.display="block";
+        initApp();
+      }
+    }, 400);
+  } else {
+    document.getElementById("pw-err").textContent="Wrong password. Try again.";
+    document.getElementById("pw-input").value="";
+    const c=document.getElementById("pw-card");
+    c.classList.add("shake"); setTimeout(()=>c.classList.remove("shake"),600);
+  }
+}
+
+async function initApp(){ inv=await ghLoad(); render(); }
+
+// ===== BOOT =====
+document.addEventListener("DOMContentLoaded",()=>{
+  if("serviceWorker"in navigator) navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+
+  // Register all app listeners unconditionally — must run before any early return
+  document.getElementById("search").addEventListener("input",e=>{
+    document.getElementById("search-clr").style.display=e.target.value?"block":"none";
+    render();
+  });
+  document.getElementById("search-clr").addEventListener("click",()=>{
+    document.getElementById("search").value="";
+    document.getElementById("search-clr").style.display="none"; render();
+  });
+  document.getElementById("fab-btn").addEventListener("click",toggleFab);
+  document.getElementById("fab-add").addEventListener("click",openAdd);
+  document.getElementById("fab-scan").addEventListener("click",openScanner);
+  document.getElementById("overlay").addEventListener("click",closeSheet);
+  document.getElementById("sc-close").addEventListener("click",closeScanner);
+  document.addEventListener("click",e=>{ if(fabOpen&&!document.getElementById("fab").contains(e.target)) closeFab(); });
+
+  if(sessionStorage.getItem(SS_KEY)==="1"){
+    document.getElementById("pw-screen").style.display="none";
+    if(!GH_TOKEN()){
+      document.getElementById("tok-screen").style.display="flex";
+    } else {
+      document.getElementById("app").style.display="block";
+      document.getElementById("fab").style.display="block";
+      initApp();
+    }
+    return;
+  }
+
+  document.getElementById("pw-btn").addEventListener("click",tryLogin);
+  document.getElementById("pw-input").addEventListener("keydown",e=>{
+    if(e.key==="Enter") tryLogin();
+    document.getElementById("pw-err").textContent="";
+  });
+  document.getElementById("pw-toggle").addEventListener("click",()=>{
+    const i=document.getElementById("pw-input");
+    i.type=i.type==="password"?"text":"password";
+  });
+  document.getElementById("tok-btn").addEventListener("click",()=>{
+    const t=document.getElementById("tok-input").value.trim();
+    if(!t.startsWith("github_")){ document.getElementById("tok-err").textContent="Invalid token format."; return; }
+    localStorage.setItem(TOK_KEY,t);
+    document.getElementById("tok-screen").style.display="none";
+    document.getElementById("app").style.display="block";
+    document.getElementById("fab").style.display="block";
+    initApp();
+  });
+  document.getElementById("tok-toggle").addEventListener("click",()=>{
+    const i=document.getElementById("tok-input");
+    i.type=i.type==="password"?"text":"password";
+  });
+});
+</script>
+</body>
+</html>
